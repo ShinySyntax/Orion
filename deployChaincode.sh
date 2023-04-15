@@ -215,14 +215,33 @@ chaincodeInvokeInit(){
 
 chaincodeInvoke(){
     setGlobalsForPeer0Org1
+
+    # peer chaincode invoke -o localhost:7050 \
+    #     --ordererTLSHostnameOverride orderer.example.com \
+    #     --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA \
+    #     -C $CHANNEL_NAME -n ${CC_NAME} \
+    #     --peerAddresses localhost:7051 --tlsRootCertFiles $PEER0_ORG1_CA \
+    #     --peerAddresses localhost:9051 --tlsRootCertFiles $PEER0_ORG2_CA \
+    #     --peerAddresses localhost:11051 --tlsRootCertFiles $PEER0_ORG3_CA \
+    #     -c '{"function": "CreateCertificateTransaction","Args":["8AW204022K0011340", "3204091010901234", "085156306658;", "belibaso"]}'
+
+    # peer chaincode invoke -o localhost:7050 \
+    #     --ordererTLSHostnameOverride orderer.example.com \
+    #     --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA \
+    #     -C $CHANNEL_NAME -n ${CC_NAME} \
+    #     --peerAddresses localhost:7051 --tlsRootCertFiles $PEER0_ORG1_CA \
+    #     --peerAddresses localhost:9051 --tlsRootCertFiles $PEER0_ORG2_CA \
+    #     --peerAddresses localhost:11051 --tlsRootCertFiles $PEER0_ORG3_CA \
+    #     -c '{"function": "ApproveCertificateTransaction","Args":["f42e4bb72cf5a567bcb02b00f47da44ee6d7cf3307b416faef9f351574cae21e", "085156306658;", "belibaso"]}'
+
     peer chaincode invoke -o localhost:7050 \
-        --ordererTLSHostnameOverride orderer.example.com \
-        --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA \
-        -C $CHANNEL_NAME -n ${CC_NAME} \
-        --peerAddresses localhost:7051 --tlsRootCertFiles $PEER0_ORG1_CA \
-        --peerAddresses localhost:9051 --tlsRootCertFiles $PEER0_ORG2_CA \
-        --peerAddresses localhost:11051 --tlsRootCertFiles $PEER0_ORG3_CA \
-        -c '{"function": "AddMaintenanceHistory","Args":["8AW204022K0011340", "Rusak Parah", "Spakbor lecet", "Ganti oli", "TKI 1"]}'
+    --ordererTLSHostnameOverride orderer.example.com \
+    --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA \
+    -C $CHANNEL_NAME -n ${CC_NAME} \
+    --peerAddresses localhost:7051 --tlsRootCertFiles $PEER0_ORG1_CA \
+    --peerAddresses localhost:9051 --tlsRootCertFiles $PEER0_ORG2_CA \
+    --peerAddresses localhost:11051 --tlsRootCertFiles $PEER0_ORG3_CA \
+    -c '{"function": "ProcessCertificateTransaction","Args":["f42e4bb72cf5a567bcb02b00f47da44ee6d7cf3307b416faef9f351574cae21e", "belibaso"]}'
 }
 
 chaincodeQuery(){
@@ -230,27 +249,27 @@ chaincodeQuery(){
 
     # peer chaincode query -C $CHANNEL_NAME -n ${CC_NAME} -c '{"Args":["GetCertificatesByNIK", "5403014210135678"]}'
     # peer chaincode query -C $CHANNEL_NAME -n ${CC_NAME} -c '{"Args":["GetListCertificateHistory", "8AW204022K0011340"]}'
-    peer chaincode query -C $CHANNEL_NAME -n ${CC_NAME} -c '{"Args":["GetCertificateByID", "8AW204022K0011340"]}'
+    # peer chaincode query -C $CHANNEL_NAME -n ${CC_NAME} -c '{"Args":["GetCertificateByID", "8AW204022K0011340"]}'
 }
 
 removeArtifacts() {
     rm -rf orion.tar.gz log.txt
 }
 
-packageChaincode
-installChaincode
-queryInstalled
-approveForMyOrg1
-checkCommitReadyness
-approveForMyOrg2
-checkCommitReadyness
-approveForMyOrg3
-checkCommitReadyness
-commitChaincodeDefination
-queryCommitted
-chaincodeInvokeInit
+# packageChaincode
+# installChaincode
+# queryInstalled
+# approveForMyOrg1
+# checkCommitReadyness
+# approveForMyOrg2
+# checkCommitReadyness
+# approveForMyOrg3
+# checkCommitReadyness
+# commitChaincodeDefination
+# queryCommitted
+# chaincodeInvokeInit
 
-# chaincodeInvoke
+chaincodeInvoke
 
 # chaincodeQuery
 

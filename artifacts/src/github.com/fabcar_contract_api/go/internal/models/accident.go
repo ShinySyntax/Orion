@@ -7,11 +7,11 @@ type Accident struct {
 	EngineNumber       string `json:"engine_number"`
 	VehicleCondition   string `json:"vehicle_condition"`
 	VehicleDescription string `json:"vehicle_description"`
+	Location           string `json:"location"`
+	OccurrenceTime     string `json:"occurrence_time"`
+	Report             string `json:"report"`
 	// VictimNationalID   string `json:"victim_national_id"`
 	// VictimCondition    string `json:"victim_condition"`
-	Location       string `json:"location"`
-	OccurrenceTime string `json:"occurrence_time"`
-	Report         string `json:"report"`
 }
 
 type AccidentHistory struct {
