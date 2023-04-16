@@ -117,7 +117,7 @@ func (s *SmartContract) ProcessCertificateTransaction(
 ) error {
 	mspID, _ := cid.GetMSPID(ctx.GetStub())
 	if mspID != constants.GovermentOrg {
-		return errors.New("not eligible to process this certificate transaction, only goverment org are allowed")
+		return errors.New("not eligible to process this certificate transaction, only goverment org are allowed");
 	}
 
 	certificateTx, err := s.GetCertificateTransactionByID(ctx, txID)

@@ -9,6 +9,7 @@ import (
 	"orion/internal/constants"
 	"orion/internal/models"
 
+	"github.com/hyperledger/fabric-chaincode-go/pkg/cid"
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
 
@@ -41,6 +42,11 @@ func (s *SmartContract) AddMaintenanceHistory(
 	serviceDescription,
 	serviceLocation string,
 ) error {
+	mspID, _ := cid.GetMSPID(ctx.GetStub())
+	if mspID != constants.MaintenanceOrg {
+		return errors.New("not eligible to add new maintenance, only maintenance org are allowed");
+	}
+
 	maintenance, err := s.GetMaintenanceByID(ctx, id)
 	if errors.Is(err, fmt.Errorf("failed to read from world state")) {
 		return err
