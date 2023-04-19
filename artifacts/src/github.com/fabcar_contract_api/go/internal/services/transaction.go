@@ -52,6 +52,9 @@ func (s *SmartContract) CreateCertificateTransaction(
 	if certificate.NationalID != originNIK {
 		return fmt.Errorf("certificate %s is not owned by %s", id, originNIK)
 	}
+	if certificate.IsInTransaction {
+		return errors.New("can't transfer certificate, certificate is in transaction")
+	}
 
 	txID := ctx.GetStub().GetTxID()
 	if _, err := s.GetCertificateTransactionByID(ctx, txID); err == nil {
@@ -74,6 +77,16 @@ func (s *SmartContract) CreateCertificateTransaction(
 
 	transactionAsBytes, err := json.Marshal(transaction)
 	if err != nil {
+		return err
+	}
+
+	certificate.IsInTransaction = true
+	certificateAsBytes, err := json.Marshal(certificate)
+	if err != nil {
+		return err
+	}
+
+	if err := ctx.GetStub().PutState(certificate.ID, certificateAsBytes); err != nil {
 		return err
 	}
 
@@ -112,12 +125,11 @@ func (s *SmartContract) ApproveCertificateTransaction(
 
 func (s *SmartContract) ProcessCertificateTransaction(
 	ctx contractapi.TransactionContextInterface,
-	txID,
-	secretKey string,
+	txID string,
 ) error {
 	mspID, _ := cid.GetMSPID(ctx.GetStub())
 	if mspID != constants.GovermentOrg {
-		return errors.New("not eligible to process this certificate transaction, only goverment org are allowed");
+		return errors.New("not eligible to process this certificate transaction, only goverment org are allowed")
 	}
 
 	certificateTx, err := s.GetCertificateTransactionByID(ctx, txID)
@@ -128,15 +140,13 @@ func (s *SmartContract) ProcessCertificateTransaction(
 	if certificateTx.Status != constants.ApprovedByNewOwner {
 		return errors.New("transaction can't be accepted")
 	}
-	if certificateTx.SecretKey != secretKey {
-		return errors.New("wrong secret key")
-	}
 
 	certificate, err := s.GetCertificateByID(ctx, certificateTx.CertificateID)
 	if err != nil {
 		return fmt.Errorf("certificate %s is not exist", certificateTx.CertificateID)
 	}
 
+	certificate.IsInTransaction = false
 	certificate.NationalID = certificateTx.NewOwnerNationalID
 	certificateTx.Status = constants.Success
 
@@ -159,4 +169,101 @@ func (s *SmartContract) ProcessCertificateTransaction(
 	}
 
 	return nil
+}
+
+func (s *SmartContract) GetAllListTransactions(
+	ctx contractapi.TransactionContextInterface,
+) ([]*models.CertificateTransaction, error) {
+	queryString := fmt.Sprintf(
+		`{"selector":{"model_name":"%s"}}`,
+		constants.CertificateTransactionModel,
+	)
+	transactionIterator, err := ctx.GetStub().GetQueryResult(queryString)
+	if err != nil {
+		return nil, err
+	}
+
+	var transactions []*models.CertificateTransaction
+	for transactionIterator.HasNext() {
+		transactionResponse, err := transactionIterator.Next()
+		if err != nil {
+			return nil, err
+		}
+
+		var transaction *models.CertificateTransaction
+		err = json.Unmarshal(transactionResponse.Value, &transaction)
+		if err != nil {
+			return nil, err
+		}
+		transaction.SecretKey = "";
+		transactions = append(transactions, transaction)
+	}
+
+	return transactions, nil
+}
+
+func (s *SmartContract) GetListTransactionsByStatus(
+	ctx contractapi.TransactionContextInterface,
+	status string,
+) ([]*models.CertificateTransaction, error) {
+	queryString := fmt.Sprintf(
+		`{"selector":{"model_name":"%s","status":"%s"}}`,
+		constants.CertificateTransactionModel,
+		status,
+	)
+	transactionIterator, err := ctx.GetStub().GetQueryResult(queryString)
+	if err != nil {
+		return nil, err
+	}
+
+	var transactions []*models.CertificateTransaction
+	for transactionIterator.HasNext() {
+		transactionResponse, err := transactionIterator.Next()
+		if err != nil {
+			return nil, err
+		}
+
+		var transaction *models.CertificateTransaction
+		err = json.Unmarshal(transactionResponse.Value, &transaction)
+		if err != nil {
+			return nil, err
+		}
+		transaction.SecretKey = "";
+		transactions = append(transactions, transaction)
+	}
+
+	return transactions, nil
+}
+
+func (s *SmartContract) GetListTransactionsByNewOwnerNIK(
+	ctx contractapi.TransactionContextInterface,
+	nik string,
+) ([]*models.CertificateTransaction, error) {
+	queryString := fmt.Sprintf(
+		`{"selector":{"model_name":"%s","new_owner_national_id":"%s"}}`,
+		constants.CertificateTransactionModel,
+		nik,
+	)
+	transactionIterator, err := ctx.GetStub().GetQueryResult(queryString)
+	if err != nil {
+		return nil, err
+	}
+
+	var transactions []*models.CertificateTransaction
+	for transactionIterator.HasNext() {
+		transactionResponse, err := transactionIterator.Next()
+		if err != nil {
+			return nil, err
+		}
+
+		var transaction *models.CertificateTransaction
+		err = json.Unmarshal(transactionResponse.Value, &transaction)
+		if err != nil {
+			return nil, err
+		}
+		transaction.SecretKey = "";
+		transactions = append(transactions, transaction)
+	}
+
+	return transactions, nil
 }

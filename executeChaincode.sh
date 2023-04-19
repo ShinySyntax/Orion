@@ -67,7 +67,7 @@ presetup(){
 
 CHANNEL_NAME="mychannel"
 CC_RUNTIME_LANGUAGE="golang"
-VERSION="1"
+VERSION="4"
 CC_SRC_PATH="./artifacts/src/github.com/fabcar_contract_api/go"
 CC_NAME="orion"
 
@@ -250,6 +250,7 @@ chaincodeQuery(){
     # peer chaincode query -C $CHANNEL_NAME -n ${CC_NAME} -c '{"Args":["GetCertificatesByNIK", "5403014210135678"]}'
     # peer chaincode query -C $CHANNEL_NAME -n ${CC_NAME} -c '{"Args":["GetListCertificateHistory", "8AW204022K0011340"]}'
     # peer chaincode query -C $CHANNEL_NAME -n ${CC_NAME} -c '{"Args":["GetCertificateByID", "8AW204022K0011340"]}'
+    peer chaincode query -C $CHANNEL_NAME -n ${CC_NAME} -c '{"Args":["GetAllCertificate"]}'
 }
 
 removeArtifacts() {
@@ -269,7 +270,7 @@ removeArtifacts() {
 # queryCommitted
 # chaincodeInvokeInit
 
-chaincodeInvoke
+# chaincodeInvoke
 
 # chaincodeQuery
 

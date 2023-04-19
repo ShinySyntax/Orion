@@ -15,15 +15,6 @@ func (s *SmartContract) GetCertificateByID(
 	ctx contractapi.TransactionContextInterface,
 	id string,
 ) (*models.Certificate, error) {
-	// stub := ctx.GetStub()
-
-	// mspID, _ := cid.GetMSPID(stub)
-  // userID, _ := cid.GetID(stub)
-  // value, found, _ := cid.GetAttributeValue(stub, "role")
-
-	logger.Info("fetch certificate..........")
-	// logger.Info(mspID, userID, value, found)
-
 	certificateKey := strings.Join([]string{constants.CertificateModel, id}, "-")
 	certificateBytes, err := ctx.GetStub().GetState(certificateKey)
 
@@ -39,6 +30,36 @@ func (s *SmartContract) GetCertificateByID(
 	_ = json.Unmarshal(certificateBytes, certificate)
 
 	return certificate, nil
+}
+
+func (s *SmartContract) GetAllCertificate(
+	ctx contractapi.TransactionContextInterface,
+) ([]*models.Certificate, error) {
+	certificatesIterator, err := ctx.GetStub().GetStateByRange("", "")
+
+	if err != nil {
+		return nil, err
+	}
+	defer certificatesIterator.Close()
+
+	var certificates []*models.Certificate
+
+	for certificatesIterator.HasNext() {
+		queryResponse, err := certificatesIterator.Next()
+
+		if err != nil {
+			return nil, err
+		}
+
+		certificate := new(models.Certificate)
+		_ = json.Unmarshal(queryResponse.Value, certificate)
+
+		if certificate.ModelName == constants.CertificateModel {
+			certificates = append(certificates, certificate)
+		}
+	}
+
+	return certificates, nil
 }
 
 func (s *SmartContract) GetListCertificateByNIK(

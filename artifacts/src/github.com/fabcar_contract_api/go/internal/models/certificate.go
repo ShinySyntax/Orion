@@ -18,6 +18,7 @@ type Certificate struct {
 	NationalID         string `json:"national_id"`
 	Name               string `json:"name"`
 	Address            string `json:"address"`
+	IsInTransaction    bool   `json:"is_in_transaction"`
 }
 
 type CertificateHistory struct {
