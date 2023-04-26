@@ -44,7 +44,7 @@ func (s *SmartContract) AddMaintenanceHistory(
 ) error {
 	mspID, _ := cid.GetMSPID(ctx.GetStub())
 	if mspID != constants.MaintenanceOrg {
-		return errors.New("not eligible to add new maintenance, only maintenance org are allowed");
+		return errors.New("not eligible to add new maintenance history, only maintenance org are allowed");
 	}
 
 	maintenance, err := s.GetMaintenanceByID(ctx, id)

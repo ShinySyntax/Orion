@@ -8,6 +8,7 @@ import (
 	"orion/internal/models"
 	"strings"
 
+	"github.com/hyperledger/fabric-chaincode-go/pkg/cid"
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
 
@@ -41,6 +42,11 @@ func (s *SmartContract) AddAccidentHistory(
 	occurenceTime,
 	report string,
 ) error {
+	mspID, _ := cid.GetMSPID(ctx.GetStub())
+	if mspID != constants.GovermentOrg {
+		return errors.New("not eligible to add new accident history, only gov org are allowed");
+	}
+
 	accident, err := s.GetAccidentByID(ctx, id)
 	if errors.Is(err, fmt.Errorf("failed to read from world state")) {
 		return err

@@ -10,9 +10,9 @@ type Accident struct {
 	Location           string `json:"location"`
 	OccurrenceTime     string `json:"occurrence_time"`
 	Report             string `json:"report"`
-	// VictimNationalID   string `json:"victim_national_id"`
-	// VictimCondition    string `json:"victim_condition"`
 }
+// VictimNationalID   string `json:"victim_national_id"`
+// VictimCondition    string `json:"victim_condition"`
 
 type AccidentHistory struct {
 	TxId      string    `json:"tx_id"`
