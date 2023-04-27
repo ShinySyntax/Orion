@@ -1,9 +1,9 @@
 chmod -R 777 *
-sleep 2
+sleep 1
 ./networkDown.sh
-sleep 2
+sleep 1
 ./networkUp.sh
-sleep 2
+sleep 1
 ./createChannel.sh
-sleep 2
+sleep 1
 ./initChaincode.sh

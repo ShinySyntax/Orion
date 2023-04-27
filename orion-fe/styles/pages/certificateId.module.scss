@@ -1,0 +1,35 @@
+@use '/styles/abstracts/' as *;
+
+.title {
+  text-align: center;
+  font-weight: 700;
+  font-size: 1.4rem;
+}
+
+.jsonContainer {
+  height: 280px;
+  overflow-y: scroll;
+  margin: 3em 0;
+
+  border: 2px solid $green;
+  padding: 1em 2em;
+
+  background-color: $green;
+  color: $gold;
+
+  h1 {
+    font-size: 1.5rem;
+  }
+
+  &::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: $green;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: $black;
+  }
+}

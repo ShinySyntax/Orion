@@ -1,0 +1,26 @@
+@use '/styles/abstracts/' as *;
+
+.dashboardTitle {
+  text-transform: capitalize;
+  font-weight: 800;
+  font-size: 1.5rem;
+  border-bottom: 2px solid $green;
+  width: fit-content;
+  margin: 0 auto 1em;
+  padding-bottom: 0.5em;
+  color: $green;
+}
+
+.notFoundTitle {
+  color: $red;
+  font-weight: 600;
+  font-size: 1.2rem;
+  text-align: center;
+}
+
+.itemsContainer {
+  display: flex;
+  flex-direction: column;
+  padding: 1em;
+  grid-gap: 2em;
+}

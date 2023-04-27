@@ -1,0 +1,44 @@
+@use '/styles/abstracts/' as *;
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+
+  color: $gold;
+  background-color: $green;
+
+  font-weight: 700;
+  font-size: 1.8rem;
+
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.layout {
+  min-height: 100vh;
+  background-color: $green;
+}
+
+.sidebarDiv {
+  height: 2.5em;
+  margin: 2.5em 1.5em 1em;
+  background-color: rgba($color: $gold, $alpha: 0.2);
+}
+
+.content {
+  padding: 2em;
+}
+
+.footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+
+  font-weight: bold;
+
+  text-align: center;
+
+  color: $gold;
+  background-color: $green;
+}
