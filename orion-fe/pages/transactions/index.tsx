@@ -22,9 +22,16 @@ const Transaction = (props: TransactionProps) => {
 
     const { secret } = values;
     try {
-      await axios.post('channels/mychannel/chaincodes/orion', {
+      await axios.post('channels/mychannel/chaincodes/orion/private', {
         fcn: 'ApproveCertificateTransaction',
-        args: [selectedTxID, props.nik, secret],
+        transient: {
+          key: 'transaction_properties',
+          data: {
+            transaction_id: selectedTxID,
+            nik: props.nik,
+            secret_key: secret,
+          },
+        },
       });
 
       messageApi.success('Berhasil approve transaksi', 1000);
@@ -47,9 +54,14 @@ const Transaction = (props: TransactionProps) => {
     setTransferLoading(true);
 
     try {
-      await axios.post('channels/mychannel/chaincodes/orion', {
+      await axios.post('channels/mychannel/chaincodes/orion/private', {
         fcn: 'ProcessCertificateTransaction',
-        args: [txID],
+        transient: {
+          key: 'transaction_properties',
+          data: {
+            transaction_id: txID,
+          },
+        },
       });
 
       messageApi.success('Berhasil approve transaksi', 1000);

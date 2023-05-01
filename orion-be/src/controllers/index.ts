@@ -4,11 +4,12 @@ import { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import logger from '@src/utils/logger';
 import query from '@src/services/query';
-import invoke from '@src/services/invoke';
+import { invoke, invokePrivate } from '@src/services/invoke';
 import { apiV1, secret } from '@src/constants/constant';
 import { loginUser, registerUser } from '@src/services/auth';
 import {
   validInvokeChaincode,
+  validInvokePrivateChaincode,
   validLogin,
   validQueryChaincode,
   validRegister,
@@ -47,6 +48,67 @@ const invokeChaincode = async (req: any, res: Response) => {
     logger.info(`starting invoke function ${fcn} from chaincode ${chaincodeName}`);
 
     const resp = await invoke(channelName, chaincodeName, fcn, args, req.username, req.org);
+    if (!resp.success) throw new Error(resp.data.message);
+
+    logger.info(
+      `finish invoke function ${fcn} from chaincode ${chaincodeName} with response ${resp}`
+    );
+
+    return res.status(StatusCodes.OK).json({ apiV1, data: resp.data });
+  } catch (err) {
+    logger.error(`error when invoke chaincode ${err}`);
+
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      apiV1,
+      error: {
+        code: StatusCodes.INTERNAL_SERVER_ERROR,
+        message: 'error invoke chaincode',
+      },
+    });
+  }
+};
+
+const invokePrivateChaincode = async (req: any, res: Response) => {
+  const { error: validateParamsErr, value: reqParams } =
+    validInvokePrivateChaincode.params.validate(req.params);
+  const { error: validateBodyErr, value: reqBody } = validInvokePrivateChaincode.body.validate(
+    req.body
+  );
+
+  if (validateParamsErr || validateBodyErr) {
+    let errorMsg = '';
+    if (validateParamsErr) {
+      errorMsg += validateParamsErr.message;
+      errorMsg += ' ';
+    }
+    if (validateBodyErr) {
+      errorMsg += validateBodyErr.message;
+      errorMsg += ' ';
+    }
+
+    return res.status(StatusCodes.BAD_REQUEST).json({
+      apiV1,
+      error: {
+        code: StatusCodes.BAD_REQUEST,
+        message: errorMsg,
+      },
+    });
+  }
+
+  const { fcn, transient } = reqBody;
+  const { channelName, chaincodeName } = reqParams;
+
+  try {
+    logger.info(`starting invoke function ${fcn} from chaincode ${chaincodeName}`);
+
+    const resp = await invokePrivate(
+      channelName,
+      chaincodeName,
+      fcn,
+      transient,
+      req.username,
+      req.org
+    );
     if (!resp.success) throw new Error(resp.data.message);
 
     logger.info(
@@ -246,4 +308,4 @@ const getUserCurrent = (req: any, res: Response) => {
   });
 };
 
-export { invokeChaincode, queryChaincode, login, register, getUserCurrent };
+export { invokeChaincode, invokePrivateChaincode, queryChaincode, login, register, getUserCurrent };

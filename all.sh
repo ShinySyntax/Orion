@@ -3,7 +3,7 @@ sleep 1
 ./networkDown.sh
 sleep 1
 ./networkUp.sh
-sleep 1
+sleep 2
 ./createChannel.sh
 sleep 1
 ./initChaincode.sh

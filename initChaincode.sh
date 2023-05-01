@@ -68,7 +68,7 @@ presetup(){
 
 CHANNEL_NAME="mychannel"
 CC_RUNTIME_LANGUAGE="golang"
-VERSION="3"
+VERSION="1"
 CC_SRC_PATH="./artifacts/src/github.com/orion/go"
 CC_NAME="orion"
 

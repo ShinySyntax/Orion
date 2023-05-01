@@ -11,6 +11,17 @@ const validInvokeChaincode = {
   }),
 };
 
+const validInvokePrivateChaincode = {
+  params: Joi.object({
+    channelName: Joi.string().required(),
+    chaincodeName: Joi.string().required(),
+  }),
+  body: Joi.object({
+    fcn: Joi.string().required(),
+    transient: Joi.any(),
+  }),
+};
+
 const validQueryChaincode = {
   params: Joi.object({
     channelName: Joi.string().required(),
@@ -48,4 +59,11 @@ const validLogin = {
   }),
 };
 
-export { validInvokeChaincode, validQueryChaincode, validQueryQscc, validLogin, validRegister };
+export {
+  validInvokeChaincode,
+  validInvokePrivateChaincode,
+  validQueryChaincode,
+  validQueryQscc,
+  validLogin,
+  validRegister,
+};

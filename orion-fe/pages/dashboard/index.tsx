@@ -53,13 +53,24 @@ const Dashboard = (props: DashboardProps) => {
   const handleTransferCertificate = async (values: {
     newOwnerNIK: string;
     secret: string;
+    detail: string;
   }) => {
     setTransferLoading(true);
 
-    const { newOwnerNIK, secret } = values;
+    const { newOwnerNIK, secret, detail } = values;
     try {
-      await axios.post('channels/mychannel/chaincodes/orion', {
+      await axios.post('channels/mychannel/chaincodes/orion/private', {
         fcn: 'CreateCertificateTransaction',
+        transient: {
+          key: 'transaction_properties',
+          data: {
+            transaction_id: selectedCertID,
+            origin_nik: props.username,
+            destination_nik: newOwnerNIK,
+            secret_key: secret,
+            transaction_detail: detail,
+          },
+        },
         args: [selectedCertID, props.username, newOwnerNIK, secret],
       });
 
@@ -124,6 +135,19 @@ const Dashboard = (props: DashboardProps) => {
             ]}
           >
             <Input />
+          </Form.Item>
+
+          <Form.Item
+            label="Detail Transaksi"
+            name="detail"
+            rules={[
+              {
+                required: true,
+                message: 'Tolong masukkan deskripsi transaksi',
+              },
+            ]}
+          >
+            <Input.TextArea rows={4} />
           </Form.Item>
 
           <Form.Item>
