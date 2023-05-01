@@ -4,6 +4,7 @@ export PEER0_ORG1_CA=${PWD}/artifacts/channel/crypto-config/peerOrganizations/or
 export PEER0_ORG2_CA=${PWD}/artifacts/channel/crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt
 export PEER0_ORG3_CA=${PWD}/artifacts/channel/crypto-config/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/tls/ca.crt
 export FABRIC_CFG_PATH=${PWD}/artifacts/channel/config/
+export PRIVATE_DATA_CONFIG=${PWD}/artifacts/private-data/collections_config.json
 
 export CHANNEL_NAME=mychannel
 
@@ -67,7 +68,7 @@ presetup(){
 
 CHANNEL_NAME="mychannel"
 CC_RUNTIME_LANGUAGE="golang"
-VERSION="1"
+VERSION="3"
 CC_SRC_PATH="./artifacts/src/github.com/orion/go"
 CC_NAME="orion"
 
@@ -118,7 +119,9 @@ approveForMyOrg1(){
 
     peer lifecycle chaincode approveformyorg -o localhost:7050  \
     --ordererTLSHostnameOverride orderer.example.com \
-    --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA \
+    --tls $CORE_PEER_TLS_ENABLED \
+    --collections-config $PRIVATE_DATA_CONFIG \
+    --cafile $ORDERER_CA \
     --channelID $CHANNEL_NAME --name ${CC_NAME} \
     --version ${VERSION} --init-required --package-id ${PACKAGE_ID} --sequence ${VERSION}
 
@@ -135,8 +138,14 @@ approveForMyOrg1(){
 checkCommitReadyness(){
     setGlobalsForPeer0Org1
 
-    peer lifecycle chaincode checkcommitreadiness --channelID $CHANNEL_NAME \
-    --name ${CC_NAME} --version ${VERSION} --sequence ${VERSION} --output json --init-required
+    peer lifecycle chaincode checkcommitreadiness \
+    --collections-config $PRIVATE_DATA_CONFIG \
+    --channelID $CHANNEL_NAME \
+    --name ${CC_NAME} \
+    --version ${VERSION} \
+    --sequence ${VERSION} \
+    --output json \
+    --init-required
 
     echo "===================== checking commit readyness from org 1 ===================== "
 }
@@ -146,7 +155,9 @@ approveForMyOrg2(){
 
     peer lifecycle chaincode approveformyorg -o localhost:7050 \
     --ordererTLSHostnameOverride orderer.example.com \
-    --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA \
+    --tls $CORE_PEER_TLS_ENABLED \
+    --collections-config $PRIVATE_DATA_CONFIG \
+    --cafile $ORDERER_CA \
     --channelID $CHANNEL_NAME --name ${CC_NAME} \
     --version ${VERSION} --init-required \
     --package-id ${PACKAGE_ID} --sequence ${VERSION}
@@ -157,7 +168,8 @@ approveForMyOrg2(){
 checkCommitReadyness(){
     setGlobalsForPeer0Org1
 
-    peer lifecycle chaincode checkcommitreadiness --channelID $CHANNEL_NAME \
+    peer lifecycle chaincode checkcommitreadiness --collections-config $PRIVATE_DATA_CONFIG \
+    --channelID $CHANNEL_NAME \
     --peerAddresses localhost:7051 --tlsRootCertFiles $PEER0_ORG1_CA \
     --name ${CC_NAME} --version ${VERSION} \
     --sequence ${VERSION} --output json --init-required
@@ -170,7 +182,9 @@ approveForMyOrg3(){
 
     peer lifecycle chaincode approveformyorg -o localhost:7050 \
     --ordererTLSHostnameOverride orderer.example.com \
-    --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA \
+    --tls $CORE_PEER_TLS_ENABLED \
+    --collections-config $PRIVATE_DATA_CONFIG \
+    --cafile $ORDERER_CA \
     --channelID $CHANNEL_NAME --name ${CC_NAME} \
     --version ${VERSION} --init-required \
     --package-id ${PACKAGE_ID} --sequence ${VERSION}
@@ -183,6 +197,7 @@ commitChaincodeDefination(){
 
     peer lifecycle chaincode commit -o localhost:7050 \
     --ordererTLSHostnameOverride orderer.example.com \
+    --collections-config $PRIVATE_DATA_CONFIG \
     --tls $CORE_PEER_TLS_ENABLED  --cafile $ORDERER_CA \
     --channelID $CHANNEL_NAME --name ${CC_NAME} \
     --peerAddresses localhost:7051 --tlsRootCertFiles $PEER0_ORG1_CA \

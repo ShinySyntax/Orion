@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"orion/internal/constants"
 	"orion/internal/models"
+	"orion/internal/utils"
 	"strings"
 
-	"github.com/hyperledger/fabric-chaincode-go/pkg/cid"
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
 
@@ -42,9 +42,8 @@ func (s *SmartContract) AddAccidentHistory(
 	occurenceTime,
 	report string,
 ) error {
-	mspID, _ := cid.GetMSPID(ctx.GetStub())
-	if mspID != constants.GovermentOrg {
-		return errors.New("not eligible to add new accident history, only gov org are allowed");
+	if err := utils.IsAuthorize(ctx, constants.GovermentOrg); err != nil {
+		return err
 	}
 
 	accident, err := s.GetAccidentByID(ctx, id)

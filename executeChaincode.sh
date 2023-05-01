@@ -214,43 +214,56 @@ chaincodeInvokeInit(){
 
 
 chaincodeInvoke(){
-    setGlobalsForPeer0Org1
+    setGlobalsForPeer0Org2
 
+    # export TRANSACTION=$(echo -n "{\"certificate_id\":\"8AW204022K0011340\",\"origin_nik\":\"3204091010901234\",\"destination_nik\":\"7204091010901234\",\"secret_key\":\"anjay\"}" | base64 | tr -d \\n)
     # peer chaincode invoke -o localhost:7050 \
     #     --ordererTLSHostnameOverride orderer.example.com \
     #     --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA \
     #     -C $CHANNEL_NAME -n ${CC_NAME} \
     #     --peerAddresses localhost:7051 --tlsRootCertFiles $PEER0_ORG1_CA \
     #     --peerAddresses localhost:9051 --tlsRootCertFiles $PEER0_ORG2_CA \
-    #     --peerAddresses localhost:11051 --tlsRootCertFiles $PEER0_ORG3_CA \
-    #     -c '{"function": "CreateCertificateTransaction","Args":["8AW204022K0011340", "3204091010901234", "085156306658;", "belibaso"]}'
+    #     -c '{"function": "CreateCertificateTransaction","Args":[]}' \
+    #     --transient "{\"transaction_properties\":\"$TRANSACTION\"}"
 
+    # export TRANSACTION=$(echo -n "{\"transaction_id\":\"a3892a7a0332d74617030067e05224095f0a368d01966636820d265173d84b69\",\"nik\":\"7204091010901234\",\"secret_key\":\"anjay\"}" | base64 | tr -d \\n)
+    # peer chaincode invoke -o localhost:7050 \
+    #     --ordererTLSHostnameOverride orderer.example.com \
+    #     --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA \
+    #     -C $CHANNEL_NAME -n ${CC_NAME} \
+    #     --peerAddresses localhost:7051 --tlsRootCertFiles $PEER0_ORG1_CA \
+    #     -c '{"function": "ApproveCertificateTransaction","Args":[]}' \
+    #     --transient "{\"transaction_properties\":\"$TRANSACTION\"}"
+
+    # export TRANSACTION=$(echo -n "{\"transaction_id\":\"a3892a7a0332d74617030067e05224095f0a368d01966636820d265173d84b69\"}" | base64 | tr -d \\n)
     # peer chaincode invoke -o localhost:7050 \
     #     --ordererTLSHostnameOverride orderer.example.com \
     #     --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA \
     #     -C $CHANNEL_NAME -n ${CC_NAME} \
     #     --peerAddresses localhost:7051 --tlsRootCertFiles $PEER0_ORG1_CA \
     #     --peerAddresses localhost:9051 --tlsRootCertFiles $PEER0_ORG2_CA \
-    #     --peerAddresses localhost:11051 --tlsRootCertFiles $PEER0_ORG3_CA \
-    #     -c '{"function": "ApproveCertificateTransaction","Args":["f42e4bb72cf5a567bcb02b00f47da44ee6d7cf3307b416faef9f351574cae21e", "085156306658;", "belibaso"]}'
+    #     -c '{"function": "ProcessCertificateTransaction","Args":[]}' \
+    #     --transient "{\"transaction_properties\":\"$TRANSACTION\"}"  
 
-    peer chaincode invoke -o localhost:7050 \
-    --ordererTLSHostnameOverride orderer.example.com \
-    --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA \
-    -C $CHANNEL_NAME -n ${CC_NAME} \
-    --peerAddresses localhost:7051 --tlsRootCertFiles $PEER0_ORG1_CA \
-    --peerAddresses localhost:9051 --tlsRootCertFiles $PEER0_ORG2_CA \
-    --peerAddresses localhost:11051 --tlsRootCertFiles $PEER0_ORG3_CA \
-    -c '{"function": "ProcessCertificateTransaction","Args":["f42e4bb72cf5a567bcb02b00f47da44ee6d7cf3307b416faef9f351574cae21e", "belibaso"]}'
+    # peer chaincode invoke -o localhost:7050 \
+    # --ordererTLSHostnameOverride orderer.example.com \
+    # --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA \
+    # -C $CHANNEL_NAME -n ${CC_NAME} \
+    # --peerAddresses localhost:7051 --tlsRootCertFiles $PEER0_ORG1_CA \
+    # --peerAddresses localhost:9051 --tlsRootCertFiles $PEER0_ORG2_CA \
+    # --peerAddresses localhost:11051 --tlsRootCertFiles $PEER0_ORG3_CA \
+    # -c '{"function": "ProcessCertificateTransaction","Args":["f42e4bb72cf5a567bcb02b00f47da44ee6d7cf3307b416faef9f351574cae21e", "belibaso"]}'
 }
 
 chaincodeQuery(){
-    setGlobalsForPeer0Org1
+    setGlobalsForPeer0Org2
 
     # peer chaincode query -C $CHANNEL_NAME -n ${CC_NAME} -c '{"Args":["GetCertificatesByNIK", "5403014210135678"]}'
     # peer chaincode query -C $CHANNEL_NAME -n ${CC_NAME} -c '{"Args":["GetListCertificateHistory", "8AW204022K0011340"]}'
     # peer chaincode query -C $CHANNEL_NAME -n ${CC_NAME} -c '{"Args":["GetCertificateByID", "8AW204022K0011340"]}'
-    peer chaincode query -C $CHANNEL_NAME -n ${CC_NAME} -c '{"Args":["GetAllCertificate"]}'
+    # peer chaincode query -C $CHANNEL_NAME -n ${CC_NAME} -c '{"Args":["GetAllListTransactions"]}'
+    # peer chaincode query -C $CHANNEL_NAME -n ${CC_NAME} -c '{"Args":["GetCertificateTransactionByID", "a3892a7a0332d74617030067e05224095f0a368d01966636820d265173d84b68"]}'
+    # peer chaincode query -C $CHANNEL_NAME -n ${CC_NAME} -c '{"Args":["GetListTransactionsByStatus", "in-progress"]}'
 }
 
 removeArtifacts() {
@@ -270,7 +283,7 @@ removeArtifacts() {
 # queryCommitted
 # chaincodeInvokeInit
 
-# chaincodeInvoke
+chaincodeInvoke
 
 # chaincodeQuery
 

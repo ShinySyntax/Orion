@@ -8,11 +8,9 @@ type CertificateTransaction struct {
 	Status             string `json:"status"`
 	SecretKey          string `json:"secret_key"`
 	CreatedAt          string `json:"created_at"`
-	// TransactionDetail         string `json:"transaction_detail"`
 }
 
-type CertificateTransactionHistory struct {
-	TxId      string    `json:"tx_id"`
-	Timestamp string    `json:"timestamp"`
-	Accident  *Accident `json:"certificate"`
+type CertificateTransactionDetail struct {
+	Base
+	Detail string `json:"detail"`
 }

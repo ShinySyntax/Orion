@@ -8,8 +8,8 @@ import (
 
 	"orion/internal/constants"
 	"orion/internal/models"
+	"orion/internal/utils"
 
-	"github.com/hyperledger/fabric-chaincode-go/pkg/cid"
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
 
@@ -42,9 +42,8 @@ func (s *SmartContract) AddMaintenanceHistory(
 	serviceDescription,
 	serviceLocation string,
 ) error {
-	mspID, _ := cid.GetMSPID(ctx.GetStub())
-	if mspID != constants.MaintenanceOrg {
-		return errors.New("not eligible to add new maintenance history, only maintenance org are allowed");
+	if err := utils.IsAuthorize(ctx, constants.MaintenanceOrg); err != nil {
+		return err
 	}
 
 	maintenance, err := s.GetMaintenanceByID(ctx, id)

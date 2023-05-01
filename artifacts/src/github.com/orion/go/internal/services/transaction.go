@@ -6,59 +6,105 @@ import (
 	"fmt"
 	"orion/internal/constants"
 	"orion/internal/models"
+	"orion/internal/utils"
 	"strings"
 
-	"github.com/hyperledger/fabric-chaincode-go/pkg/cid"
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
 
 func (s *SmartContract) GetCertificateTransactionByID(
 	ctx contractapi.TransactionContextInterface,
-	id string,
+	txID string,
 ) (*models.CertificateTransaction, error) {
-	transactionKey := strings.Join([]string{constants.CertificateTransactionModel, id}, "-")
-	transactionBytes, err := ctx.GetStub().GetState(transactionKey)
+	txKey := strings.Join([]string{constants.CertificateTransactionModel, txID}, "-")
+	txAsBytes, err := ctx.GetStub().GetPrivateData(constants.CollectionTransaction, txKey)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to read from world state")
+		return nil, fmt.Errorf("failed to get transaction: %v", err)
 	}
 
-	if transactionBytes == nil {
-		return nil, fmt.Errorf("%s does not exist", transactionKey)
+	if txAsBytes == nil {
+		return nil, fmt.Errorf("%s does not exist", txKey)
 	}
 
-	transaction := new(models.CertificateTransaction)
-	_ = json.Unmarshal(transactionBytes, transaction)
+	tx := new(models.CertificateTransaction)
+	_ = json.Unmarshal(txAsBytes, tx)
 
-	return transaction, nil
+	return tx, nil
 }
 
 func (s *SmartContract) CreateCertificateTransaction(
 	ctx contractapi.TransactionContextInterface,
-	id,
-	originNIK,
-	destinationNIK,
-	secretKey string,
 ) error {
-	if originNIK == destinationNIK {
+	// Get new asset from transient map.
+	transientMap, err := ctx.GetStub().GetTransient()
+	if err != nil {
+		return fmt.Errorf("error getting transient: %v", err)
+	}
+
+	// Transaction properties are private, therefore they get passed in transient field, instead of func args.
+	transientTransactionJSON, ok := transientMap["transaction_properties"]
+	if !ok {
+		return fmt.Errorf("asset not found in the transient map input")
+	}
+
+	type transactionTransientInput struct {
+		CertificateID     string `json:"certificate_id"`
+		OriginNIK         string `json:"origin_nik"`
+		DestinationNIK    string `json:"destination_nik"`
+		SecretKey         string `json:"secret_key"`
+		TransactionDetail string `json:"transaction_detail"`
+	}
+
+	var txInput transactionTransientInput
+	err = json.Unmarshal(transientTransactionJSON, &txInput)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal JSON: %v", err)
+	}
+
+	// Basic validation.
+	if len(txInput.CertificateID) == 0 {
+		return fmt.Errorf("certificate_id field must be a non-empty string")
+	}
+	if len(txInput.OriginNIK) == 0 {
+		return fmt.Errorf("origin_nik field must be a non-empty string")
+	}
+	if len(txInput.DestinationNIK) == 0 {
+		return fmt.Errorf("destination_nik field must be a non-empty string")
+	}
+	if len(txInput.SecretKey) == 0 {
+		return fmt.Errorf("secret_key field must be a non-empty string")
+	}
+	if len(txInput.TransactionDetail) == 0 {
+		return fmt.Errorf("transaction_detail must be a non-empty string")
+	}
+
+	// Check if asset already exists
+	txID := ctx.GetStub().GetTxID()
+	txAsBytes, err := ctx.GetStub().GetPrivateData(constants.CollectionTransaction, txID)
+	if err != nil {
+		return fmt.Errorf("failed to get transaction: %v", err)
+	} else if txAsBytes != nil {
+		logger.Info("Transaction already exists: " + txID)
+		return fmt.Errorf("this transaction already exists: " + txID)
+	}
+
+	// Business logic validation.
+
+	if txInput.OriginNIK == txInput.DestinationNIK {
 		return errors.New("can't transfer certificate to the same user")
 	}
 
-	certificate, err := s.GetCertificateByID(ctx, id)
+	certificate, err := s.GetCertificateByID(ctx, txInput.CertificateID)
 	if err != nil {
-		return fmt.Errorf("certificate %s is not exist", id)
+		return fmt.Errorf("certificate %s is not exist", txInput.CertificateID)
 	}
 
-	if certificate.NationalID != originNIK {
-		return fmt.Errorf("certificate %s is not owned by %s", id, originNIK)
+	if certificate.NationalID != txInput.OriginNIK {
+		return fmt.Errorf("certificate %s is not owned by %s", txInput.CertificateID, txInput.OriginNIK)
 	}
 	if certificate.IsInTransaction {
 		return errors.New("can't transfer certificate, certificate is in transaction")
-	}
-
-	txID := ctx.GetStub().GetTxID()
-	if _, err := s.GetCertificateTransactionByID(ctx, txID); err == nil {
-		return fmt.Errorf("transaction key %s already used", txID)
 	}
 
 	timestamp, _ := ctx.GetStub().GetTxTimestamp()
@@ -67,15 +113,27 @@ func (s *SmartContract) CreateCertificateTransaction(
 			ModelName: constants.CertificateTransactionModel,
 			ID:        strings.Join([]string{constants.CertificateTransactionModel, txID}, "-"),
 		},
-		CertificateID:      id,
-		OldOwnerNationalID: originNIK,
-		NewOwnerNationalID: destinationNIK,
+		CertificateID:      txInput.CertificateID,
+		OldOwnerNationalID: txInput.OriginNIK,
+		NewOwnerNationalID: txInput.DestinationNIK,
 		Status:             constants.InProgress,
-		SecretKey:          secretKey,
+		SecretKey:          txInput.SecretKey,
 		CreatedAt:          timestamp.String(),
+	}
+	transactionDetail := &models.CertificateTransactionDetail{
+		Base: models.Base{
+			ModelName: constants.CertificateTransactionDetailModel,
+			ID:        strings.Join([]string{constants.CertificateTransactionDetailModel, txID}, "-"),
+		},
+		Detail: txInput.TransactionDetail,
 	}
 
 	transactionAsBytes, err := json.Marshal(transaction)
+	if err != nil {
+		return err
+	}
+
+	transactionDetailAsBytes, err := json.Marshal(transactionDetail)
 	if err != nil {
 		return err
 	}
@@ -86,31 +144,60 @@ func (s *SmartContract) CreateCertificateTransaction(
 		return err
 	}
 
+	if err := ctx.GetStub().PutPrivateData(constants.CollectionTransaction, transaction.ID, transactionAsBytes); err != nil {
+		return err
+	}
+
+	if err := ctx.GetStub().PutPrivateData(constants.CollectionTransactionDetail, transactionDetail.ID, transactionDetailAsBytes); err != nil {
+		return err
+	}
+
 	if err := ctx.GetStub().PutState(certificate.ID, certificateAsBytes); err != nil {
 		return err
 	}
 
-	return ctx.GetStub().PutState(transaction.ID, transactionAsBytes)
+	return nil
 }
 
 func (s *SmartContract) ApproveCertificateTransaction(
 	ctx contractapi.TransactionContextInterface,
-	txID,
-	nik,
-	secretKey string,
 ) error {
-	certificateTx, err := s.GetCertificateTransactionByID(ctx, txID)
+	// Get new asset from transient map.
+	transientMap, err := ctx.GetStub().GetTransient()
 	if err != nil {
-		return fmt.Errorf("certificate transaction %s is not exist", txID)
+		return fmt.Errorf("error getting transient: %v", err)
 	}
 
-	if certificateTx.NewOwnerNationalID != nik {
+	// Transaction properties are private, therefore they get passed in transient field, instead of func args.
+	transientTransactionJSON, ok := transientMap["transaction_properties"]
+	if !ok {
+		return fmt.Errorf("asset not found in the transient map input")
+	}
+
+	type transactionTransientInput struct {
+		TransactionID string `json:"transaction_id"`
+		NIK           string `json:"nik"`
+		SecretKey     string `json:"secret_key"`
+	}
+
+	var txInput transactionTransientInput
+	err = json.Unmarshal(transientTransactionJSON, &txInput)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal JSON: %v", err)
+	}
+
+	certificateTx, err := s.GetCertificateTransactionByID(ctx, txInput.TransactionID)
+	if err != nil {
+		return fmt.Errorf("certificate transaction %s is not exist", txInput.TransactionID)
+	}
+
+	if certificateTx.NewOwnerNationalID != txInput.NIK {
 		return errors.New("user not eligible to accept transaction")
 	}
 	if certificateTx.Status != constants.InProgress {
 		return errors.New("transaction can't be approved")
 	}
-	if certificateTx.SecretKey != secretKey {
+	if certificateTx.SecretKey != txInput.SecretKey {
 		return errors.New("wrong secret key")
 	}
 
@@ -120,21 +207,41 @@ func (s *SmartContract) ApproveCertificateTransaction(
 		return err
 	}
 
-	return ctx.GetStub().PutState(certificateTx.ID, certificateTxAsBytes)
+	return ctx.GetStub().PutPrivateData(constants.CollectionTransaction, certificateTx.ID, certificateTxAsBytes)
 }
 
 func (s *SmartContract) ProcessCertificateTransaction(
 	ctx contractapi.TransactionContextInterface,
-	txID string,
 ) error {
-	mspID, _ := cid.GetMSPID(ctx.GetStub())
-	if mspID != constants.GovermentOrg {
-		return errors.New("not eligible to process this certificate transaction, only goverment org are allowed")
+	if err := utils.IsAuthorize(ctx, constants.GovermentOrg); err != nil {
+		return err
 	}
 
-	certificateTx, err := s.GetCertificateTransactionByID(ctx, txID)
+	// Get new asset from transient map.
+	transientMap, err := ctx.GetStub().GetTransient()
 	if err != nil {
-		return fmt.Errorf("certificate transaction %s is not exist", txID)
+		return fmt.Errorf("error getting transient: %v", err)
+	}
+
+	// Transaction properties are private, therefore they get passed in transient field, instead of func args.
+	transientTransactionJSON, ok := transientMap["transaction_properties"]
+	if !ok {
+		return fmt.Errorf("asset not found in the transient map input")
+	}
+
+	type transactionTransientInput struct {
+		TransactionID string `json:"transaction_id"`
+	}
+
+	var txInput transactionTransientInput
+	err = json.Unmarshal(transientTransactionJSON, &txInput)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal JSON: %v", err)
+	}
+
+	certificateTx, err := s.GetCertificateTransactionByID(ctx, txInput.TransactionID)
+	if err != nil {
+		return fmt.Errorf("certificate transaction %s is not exist", txInput.TransactionID)
 	}
 
 	if certificateTx.Status != constants.ApprovedByNewOwner {
@@ -164,7 +271,7 @@ func (s *SmartContract) ProcessCertificateTransaction(
 		return err
 	}
 
-	if err := ctx.GetStub().PutState(certificateTx.ID, certificateTxAsBytes); err != nil {
+	if err := ctx.GetStub().PutPrivateData(constants.CollectionTransaction, certificateTx.ID, certificateTxAsBytes); err != nil {
 		return err
 	}
 
@@ -178,7 +285,7 @@ func (s *SmartContract) GetAllListTransactions(
 		`{"selector":{"model_name":"%s"}}`,
 		constants.CertificateTransactionModel,
 	)
-	transactionIterator, err := ctx.GetStub().GetQueryResult(queryString)
+	transactionIterator, err := ctx.GetStub().GetPrivateDataQueryResult(constants.CollectionTransaction, queryString)
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +302,7 @@ func (s *SmartContract) GetAllListTransactions(
 		if err != nil {
 			return nil, err
 		}
-		transaction.SecretKey = "";
+		transaction.SecretKey = ""
 		transactions = append(transactions, transaction)
 	}
 
@@ -211,7 +318,7 @@ func (s *SmartContract) GetListTransactionsByStatus(
 		constants.CertificateTransactionModel,
 		status,
 	)
-	transactionIterator, err := ctx.GetStub().GetQueryResult(queryString)
+	transactionIterator, err := ctx.GetStub().GetPrivateDataQueryResult(constants.CollectionTransaction, queryString)
 	if err != nil {
 		return nil, err
 	}
@@ -228,7 +335,7 @@ func (s *SmartContract) GetListTransactionsByStatus(
 		if err != nil {
 			return nil, err
 		}
-		transaction.SecretKey = "";
+		transaction.SecretKey = ""
 		transactions = append(transactions, transaction)
 	}
 
@@ -244,7 +351,7 @@ func (s *SmartContract) GetListTransactionsByNewOwnerNIK(
 		constants.CertificateTransactionModel,
 		nik,
 	)
-	transactionIterator, err := ctx.GetStub().GetQueryResult(queryString)
+	transactionIterator, err := ctx.GetStub().GetPrivateDataQueryResult(constants.CollectionTransaction, queryString)
 	if err != nil {
 		return nil, err
 	}
@@ -261,7 +368,7 @@ func (s *SmartContract) GetListTransactionsByNewOwnerNIK(
 		if err != nil {
 			return nil, err
 		}
-		transaction.SecretKey = "";
+		transaction.SecretKey = ""
 		transactions = append(transactions, transaction)
 	}
 
