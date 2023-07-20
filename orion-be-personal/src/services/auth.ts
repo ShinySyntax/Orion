@@ -40,22 +40,11 @@ const registerUser = async (username: string, org: string) => {
     adminUser
   );
 
-  const enrollment = await ca.enroll({
+  await ca.enroll({
     enrollmentID: username,
     enrollmentSecret: secret,
     attr_reqs: [{ name: 'role', optional: false }],
   });
-
-  const x509Identity = {
-    credentials: {
-      certificate: enrollment.certificate,
-      privateKey: enrollment.key.toBytes(),
-    },
-    mspId: orgMspMap[org],
-    type: 'X.509',
-    role: 'user',
-  };
-  await wallet.put(username, x509Identity);
 
   logger.info(`success register user with username ${username}`);
 
@@ -73,7 +62,6 @@ const loginUser = async (username: string, password: string, org: string) => {
     await ca.enroll({
       enrollmentID: username,
       enrollmentSecret: password,
-      attr_reqs: [{ name: 'role', optional: false }],
     });
   } catch (err) {
     logger.error(err);
@@ -89,4 +77,55 @@ const loginUser = async (username: string, password: string, org: string) => {
   return composeSuccessResService({ org: mspID, role: role === '' ? 'admin' : role });
 };
 
-export { registerUser, loginUser };
+const initUser = async (username: string, password: string, org: string) => {
+  const walletPath = await getWalletPath(org);
+  const wallet = await Wallets.newFileSystemWallet(walletPath);
+
+  const caURL = await getCaUrl(org, getCCP(org));
+  const ca = new FabricCAServices(caURL);
+
+  try {
+    const enrollment = await ca.enroll({
+      enrollmentID: username,
+      enrollmentSecret: password,
+    });
+
+    const x509Identity = {
+      credentials: {
+        certificate: enrollment.certificate,
+        privateKey: enrollment.key.toBytes(),
+      },
+      mspId: orgMspMap[org],
+      type: 'X.509',
+      role: 'user',
+    };
+
+    await wallet.put(username, x509Identity);
+  } catch (err) {
+    logger.error(err);
+    throw new Error('login failed, please check again your credential');
+  }
+
+  const user = await wallet.get(username);
+  if (!user) throw new Error('login failed, user not exist');
+
+  const userDetail = await query(channelName, chaincodeName, [], 'GetUserInfo', username, org);
+  const { msp_id: mspID, role } = userDetail.data;
+
+  return composeSuccessResService({ org: mspID, role });
+};
+
+const getUserRole = async (username: string, org: string) => {
+  const walletPath = await getWalletPath(org);
+  const wallet = await Wallets.newFileSystemWallet(walletPath);
+
+  const user = await wallet.get(username);
+  if (!user) throw new Error('login failed, user not exist');
+
+  const userDetail = await query(channelName, chaincodeName, [], 'GetUserInfo', username, org);
+  const { role } = userDetail.data;
+
+  return role === '' ? 'admin' : role;
+};
+
+export { registerUser, loginUser, initUser, getUserRole };

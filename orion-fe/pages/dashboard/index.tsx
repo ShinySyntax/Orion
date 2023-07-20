@@ -64,14 +64,13 @@ const Dashboard = (props: DashboardProps) => {
         transient: {
           key: 'transaction_properties',
           data: {
-            transaction_id: selectedCertID,
+            certificate_id: selectedCertID,
             origin_nik: props.username,
             destination_nik: newOwnerNIK,
             secret_key: secret,
             transaction_detail: detail,
           },
         },
-        args: [selectedCertID, props.username, newOwnerNIK, secret],
       });
 
       messageApi.success('Berhasil transfer BPKB', 1000);
@@ -239,16 +238,22 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
       const itemRes = await axios.get(URL);
 
       const isItemDataExist = itemRes?.data?.data;
-      if (!isItemDataExist || itemRes.data.data.length === 0)
+      if (!isItemDataExist)
         throw new Error('item data not exist');
+      
+      let propsData = []
+      if (itemRes.data.data.length !== 0)
+        propsData = itemRes.data.data;
 
-      props.data = itemRes.data.data;
+      props.data = propsData;
     }
 
     props.username = username;
     props.role = role;
     props.org = org;
     props.isSuccess = true;
+
+    console.log(props.data)
   } catch (err) {
     console.error(err);
   }

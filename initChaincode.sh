@@ -57,25 +57,17 @@ setGlobalsForPeer1Org3(){
     export CORE_PEER_ADDRESS=localhost:12051
 }
 
-presetup(){
-    echo Vendoring Go dependencies ...
-    pushd ./artifacts/src/github.com/fabcar_contract_api/go
-    GO111MODULE=on go mod vendor
-    popd
-    echo Finished vendoring Go dependencies
-}
-# presetup
-
 CHANNEL_NAME="mychannel"
 CC_RUNTIME_LANGUAGE="golang"
 VERSION="1"
+SEQUENCE="1"
 CC_SRC_PATH="./artifacts/src/github.com/orion/go"
 CC_NAME="orion"
 
 packageChaincode(){
     rm -rf ${CC_NAME}.tar.gz
     setGlobalsForPeer0Org1
-    peer lifecycle chaincode package ${CC_NAME}.tar.gz --path ${CC_SRC_PATH} --lang ${CC_RUNTIME_LANGUAGE} --label ${CC_NAME}_${VERSION}
+    peer lifecycle chaincode package ${CC_NAME}.tar.gz --path ${CC_SRC_PATH} --lang ${CC_RUNTIME_LANGUAGE} --label ${CC_NAME}_${VERSION}_${SEQUENCE}
     echo "===================== Chaincode is packaged on peer0.org1 ===================== "
 }
 
@@ -123,16 +115,10 @@ approveForMyOrg1(){
     --collections-config $PRIVATE_DATA_CONFIG \
     --cafile $ORDERER_CA \
     --channelID $CHANNEL_NAME --name ${CC_NAME} \
-    --version ${VERSION} --init-required --package-id ${PACKAGE_ID} --sequence ${VERSION}
+    --version ${VERSION} --init-required --package-id ${PACKAGE_ID} --sequence ${SEQUENCE} \
 
     echo "===================== chaincode approved from org 1 ===================== "
 }
-
-# --signature-policy "OR ('Org1MSP.member')"
-# --peerAddresses localhost:7051 --tlsRootCertFiles $PEER0_ORG1_CA --peerAddresses localhost:9051 --tlsRootCertFiles $PEER0_ORG2_CA
-# --peerAddresses peer0.org1.example.com:7051 --tlsRootCertFiles $PEER0_ORG1_CA --peerAddresses peer0.org2.example.com:9051 --tlsRootCertFiles $PEER0_ORG2_CA
-#--channel-config-policy Channel/Application/Admins
-# --signature-policy "OR ('Org1MSP.peer','Org2MSP.peer')"
 
 
 checkCommitReadyness(){
@@ -143,7 +129,7 @@ checkCommitReadyness(){
     --channelID $CHANNEL_NAME \
     --name ${CC_NAME} \
     --version ${VERSION} \
-    --sequence ${VERSION} \
+    --sequence ${SEQUENCE} \
     --output json \
     --init-required
 
@@ -160,7 +146,7 @@ approveForMyOrg2(){
     --cafile $ORDERER_CA \
     --channelID $CHANNEL_NAME --name ${CC_NAME} \
     --version ${VERSION} --init-required \
-    --package-id ${PACKAGE_ID} --sequence ${VERSION}
+    --package-id ${PACKAGE_ID} --sequence ${SEQUENCE}
 
     echo "===================== chaincode approved from org 2 ===================== "
 }
@@ -172,7 +158,7 @@ checkCommitReadyness(){
     --channelID $CHANNEL_NAME \
     --peerAddresses localhost:7051 --tlsRootCertFiles $PEER0_ORG1_CA \
     --name ${CC_NAME} --version ${VERSION} \
-    --sequence ${VERSION} --output json --init-required
+    --sequence ${SEQUENCE} --output json --init-required
 
     echo "===================== checking commit readyness from org 1 ===================== "
 }
@@ -187,7 +173,7 @@ approveForMyOrg3(){
     --cafile $ORDERER_CA \
     --channelID $CHANNEL_NAME --name ${CC_NAME} \
     --version ${VERSION} --init-required \
-    --package-id ${PACKAGE_ID} --sequence ${VERSION}
+    --package-id ${PACKAGE_ID} --sequence ${SEQUENCE}
 
     echo "===================== chaincode approved from org 3 ===================== "
 }
@@ -203,7 +189,7 @@ commitChaincodeDefination(){
     --peerAddresses localhost:7051 --tlsRootCertFiles $PEER0_ORG1_CA \
     --peerAddresses localhost:9051 --tlsRootCertFiles $PEER0_ORG2_CA \
     --peerAddresses localhost:11051 --tlsRootCertFiles $PEER0_ORG3_CA \
-    --version ${VERSION} --sequence ${VERSION} \
+    --version ${VERSION} --sequence ${SEQUENCE} \
     --init-required
    
    echo "===================== Chaincode Defination commited on peer0-org1 and peer0-org2 and peer0-org3 ===================== "
@@ -226,52 +212,6 @@ chaincodeInvokeInit(){
     --isInit -c '{"function":"initLedger","Args":[]}'
 }
 
-
-
-chaincodeInvoke(){
-    setGlobalsForPeer0Org1
-
-    # peer chaincode invoke -o localhost:7050 \
-    #     --ordererTLSHostnameOverride orderer.example.com \
-    #     --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA \
-    #     -C $CHANNEL_NAME -n ${CC_NAME} \
-    #     --peerAddresses localhost:7051 --tlsRootCertFiles $PEER0_ORG1_CA \
-    #     --peerAddresses localhost:9051 --tlsRootCertFiles $PEER0_ORG2_CA \
-    #     --peerAddresses localhost:11051 --tlsRootCertFiles $PEER0_ORG3_CA \
-    #     -c '{"function": "CreateCertificateTransaction","Args":["8AW204022K0011340", "3204091010901234", "085156306658;", "belibaso"]}'
-
-    # peer chaincode invoke -o localhost:7050 \
-    #     --ordererTLSHostnameOverride orderer.example.com \
-    #     --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA \
-    #     -C $CHANNEL_NAME -n ${CC_NAME} \
-    #     --peerAddresses localhost:7051 --tlsRootCertFiles $PEER0_ORG1_CA \
-    #     --peerAddresses localhost:9051 --tlsRootCertFiles $PEER0_ORG2_CA \
-    #     --peerAddresses localhost:11051 --tlsRootCertFiles $PEER0_ORG3_CA \
-    #     -c '{"function": "ApproveCertificateTransaction","Args":["f42e4bb72cf5a567bcb02b00f47da44ee6d7cf3307b416faef9f351574cae21e", "085156306658;", "belibaso"]}'
-
-    peer chaincode invoke -o localhost:7050 \
-    --ordererTLSHostnameOverride orderer.example.com \
-    --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA \
-    -C $CHANNEL_NAME -n ${CC_NAME} \
-    --peerAddresses localhost:7051 --tlsRootCertFiles $PEER0_ORG1_CA \
-    --peerAddresses localhost:9051 --tlsRootCertFiles $PEER0_ORG2_CA \
-    --peerAddresses localhost:11051 --tlsRootCertFiles $PEER0_ORG3_CA \
-    -c '{"function": "ProcessCertificateTransaction","Args":["f42e4bb72cf5a567bcb02b00f47da44ee6d7cf3307b416faef9f351574cae21e", "belibaso"]}'
-}
-
-chaincodeQuery(){
-    setGlobalsForPeer0Org1
-
-    # peer chaincode query -C $CHANNEL_NAME -n ${CC_NAME} -c '{"Args":["GetCertificatesByNIK", "5403014210135678"]}'
-    # peer chaincode query -C $CHANNEL_NAME -n ${CC_NAME} -c '{"Args":["GetListCertificateHistory", "8AW204022K0011340"]}'
-    # peer chaincode query -C $CHANNEL_NAME -n ${CC_NAME} -c '{"Args":["GetCertificateByID", "8AW204022K0011340"]}'
-    peer chaincode query -C $CHANNEL_NAME -n ${CC_NAME} -c '{"Args":["GetAllCertificate"]}'
-}
-
-removeArtifacts() {
-    rm -rf orion.tar.gz log.txt
-}
-
 packageChaincode
 installChaincode
 queryInstalled
@@ -284,9 +224,3 @@ checkCommitReadyness
 commitChaincodeDefination
 queryCommitted
 chaincodeInvokeInit
-
-# chaincodeInvoke
-
-# chaincodeQuery
-
-# removeArtifacts

@@ -1,0 +1,2 @@
+export NODE_ENV=testingPerformanceQuery
+yarn start

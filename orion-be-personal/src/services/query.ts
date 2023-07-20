@@ -27,8 +27,7 @@ const query = async (
 
     const contract = network.getContract(chaincodeName);
     const data = await contract.evaluateTransaction(fcn, ...args);
-    const stringData = data.toString();
-    const jsonData = stringData.length !== 0 ? JSON.parse(data.toString()) : [];
+    const jsonData = JSON.parse(data.toString());
 
     return { success: true, data: jsonData };
   } catch (error) {

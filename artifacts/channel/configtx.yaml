@@ -113,11 +113,11 @@ Application: &ApplicationDefaults
       Type: ImplicitMeta
       Rule: "MAJORITY Admins"
     LifecycleEndorsement:
-      Type: ImplicitMeta
-      Rule: "MAJORITY Endorsement"
+      Type: Signature
+      Rule: "AND ('Org1MSP.peer','Org2MSP.peer', 'Org3MSP.peer')"
     Endorsement:
-      Type: ImplicitMeta
-      Rule: "MAJORITY Endorsement"
+      Type: Signature
+      Rule: "AND ('Org1MSP.peer','Org2MSP.peer', 'Org3MSP.peer')"
 
   Capabilities:
     <<: *ApplicationCapabilities
